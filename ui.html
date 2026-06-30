@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Electra Charging Copilot</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a0c;
+        --surface: #141417;
+        --surface-2: #0d0d10;
+        --border: #26262b;
+        --text: #e9e9ec;
+        --muted: #9a9aa3;
+        --faint: #6b6b73;
+        --accent: #7c6cf0;
+        --accent-soft: rgba(124, 108, 240, 0.12);
+        --green: #34d399;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 26px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+      }
+      .logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .top h1 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .top .tag {
+        font-size: 12px;
+        color: var(--faint);
+        font-family: "JetBrains Mono", monospace;
+        margin-left: auto;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 0;
+        min-height: calc(100vh - 67px);
+      }
+      .panel {
+        padding: 24px;
+        border-right: 1px solid var(--border);
+      }
+      .panel h2 {
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 16px;
+        font-weight: 600;
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 12.5px;
+        color: var(--muted);
+        margin-bottom: 5px;
+      }
+      .field input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: var(--surface);
+        color: var(--text);
+        font-size: 14px;
+        font-family: inherit;
+      }
+      .field input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .btn {
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 9px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 4px;
+      }
+      .results {
+        padding: 26px 30px;
+      }
+      .q {
+        font-size: 13px;
+        color: var(--faint);
+        margin: 0 0 4px;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .summary {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin: 4px 0 22px;
+      }
+      .summary .m {
+        display: flex;
+        flex-direction: column;
+      }
+      .summary .m .v {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .summary .m .l {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .stop {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 15px 17px;
+        margin-bottom: 12px;
+      }
+      .stop .idx {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        font-size: 14px;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .stop .body {
+        flex: 1;
+      }
+      .stop .name {
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .stop .meta {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 3px;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .stop .soc {
+        font-size: 12.5px;
+        color: var(--green);
+        margin-top: 5px;
+      }
+      .bar {
+        height: 6px;
+        border-radius: 4px;
+        background: var(--border);
+        margin-top: 7px;
+        overflow: hidden;
+        max-width: 240px;
+      }
+      .bar > i {
+        display: block;
+        height: 100%;
+        background: var(--green);
+      }
+      .grounded {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        color: var(--green);
+        margin-top: 20px;
+      }
+      .grounded .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .panel {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div class="logo">
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#7c6cf0"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      </div>
+      <h1>Electra Charging Copilot</h1>
+      <span class="tag">FastAPI · grounded · keyless engine</span>
+    </div>
+
+    <div class="grid">
+      <aside class="panel">
+        <h2>Plan a charge</h2>
+        <div class="field">
+          <label>From</label><input id="origin" value="Paris" />
+        </div>
+        <div class="field">
+          <label>To</label><input id="dest" value="Bordeaux" />
+        </div>
+        <div class="field">
+          <label>Vehicle</label><input id="car" value="Peugeot e-208" />
+        </div>
+        <div class="field">
+          <label>Start battery %</label><input id="soc" value="70" />
+        </div>
+        <button class="btn" onclick="plan()">Plan route →</button>
+        <div class="grounded">
+          <span class="dot"></span> every value below comes from a real tool
+          call — no LLM guessing
+        </div>
+      </aside>
+
+      <main class="results">
+        <p class="q" id="q">POST /route → SoC-aware planner</p>
+        <div class="summary" id="summary"></div>
+        <div id="stops"></div>
+      </main>
+    </div>
+
+    <script>
+      async function plan() {
+        const body = {
+          origin: document.getElementById("origin").value,
+          destination: document.getElementById("dest").value,
+          car_model: document.getElementById("car").value,
+          current_battery_pct: parseInt(
+            document.getElementById("soc").value || "70",
+            10,
+          ),
+        };
+        document.getElementById("q").textContent =
+          `POST /route  ${JSON.stringify(body)}`;
+        let data;
+        try {
+          const r = await fetch("/route", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          data = await r.json();
+        } catch (e) {
+          document.getElementById("stops").textContent = "API error: " + e;
+          return;
+        }
+
+        const stops = data.stops || data.charging_stops || [];
+        const km = data.total_distance_km ?? data.distance_km ?? "";
+        const mins = data.total_charge_minutes ?? data.total_minutes ?? "";
+        const cost = data.total_cost_eur ?? data.cost_eur ?? "";
+
+        document.getElementById("summary").innerHTML = `
+    <div class="m"><span class="v">${stops.length}</span><span class="l">charging stops</span></div>
+    <div class="m"><span class="v">${km ? Math.round(km) + " km" : "—"}</span><span class="l">${body.origin} → ${body.destination}</span></div>
+    <div class="m"><span class="v">${mins ? "~" + Math.round(mins) + " min" : "—"}</span><span class="l">total charging</span></div>
+    <div class="m"><span class="v">${cost ? "~€" + (+cost).toFixed(2) : "—"}</span><span class="l">total cost</span></div>`;
+
+        document.getElementById("stops").innerHTML =
+          stops
+            .map((s, i) => {
+              const name = s.name || s.station_name || "Stop";
+              const city = s.city ? " · " + s.city : "";
+              const arr = s.arrive_battery_pct ?? s.arrival_soc_pct;
+              const dep = s.depart_battery_pct ?? s.departure_soc_pct ?? 80;
+              const kwh = s.added_kwh ?? s.energy_added_kwh;
+              const t = s.est_charge_minutes ?? s.charge_minutes;
+              const c = s.est_cost_eur ?? s.cost_eur;
+              return `<div class="stop"><div class="idx">${i + 1}</div><div class="body">
+      <div class="name">${name}<span style="color:var(--faint);font-weight:400">${city}</span></div>
+      <div class="meta">${kwh != null ? "+" + (+kwh).toFixed(1) + " kWh" : ""} ${t != null ? "· ~" + Math.round(t) + " min" : ""} ${c != null ? "· ~€" + (+c).toFixed(2) : ""}</div>
+      <div class="soc">arrive ${arr != null ? arr + "%" : "—"} → charge to ${dep}%</div>
+      <div class="bar"><i style="width:${dep}%"></i></div>
+    </div></div>`;
+            })
+            .join("") || '<p style="color:var(--muted)">No stops needed.</p>';
+      }
+      plan();
+    </script>
+  </body>
+</html>
