@@ -13,6 +13,8 @@ requires the LLM stack and an ANTHROPIC_API_KEY.
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -23,12 +25,17 @@ from .models import RoutePlan, Station
 from .routing import plan_route
 
 app = FastAPI(title="Electra Charging Copilot", version=__version__)
+logger = logging.getLogger(__name__)
+
+MAX_QUESTION_CHARS = 1000
+MAX_CITY_CHARS = 64
+MAX_CAR_MODEL_CHARS = 64
 
 
 class ChatRequest(BaseModel):
     """A single natural-language question for the copilot."""
 
-    question: str = Field(min_length=1, examples=["Cheapest fast charger in Lyon with a café?"])
+    question: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS, examples=["Cheapest fast charger in Lyon with a café?"])
 
 
 class ChatResponse(BaseModel):
@@ -40,10 +47,10 @@ class ChatResponse(BaseModel):
 class RouteRequest(BaseModel):
     """Inputs for a route plan."""
 
-    origin: str
-    destination: str
-    current_battery_pct: int = 80
-    car_model: str = "default"
+    origin: str = Field(min_length=1, max_length=MAX_CITY_CHARS)
+    destination: str = Field(min_length=1, max_length=MAX_CITY_CHARS)
+    current_battery_pct: int = Field(default=80, ge=0, le=100)
+    car_model: str = Field(default="default", max_length=MAX_CAR_MODEL_CHARS)
 
 
 @app.get("/healthz")
@@ -80,5 +87,6 @@ def chat(req: ChatRequest) -> ChatResponse:
 
     try:
         return ChatResponse(answer=ask(req.question))
-    except Exception as exc:  # surface config/LLM errors as 503, don't 500 opaquely
-        raise HTTPException(status_code=503, detail=f"Agent unavailable: {exc}") from exc
+    except Exception as exc:  # log the cause server-side; clients get a generic 503
+        logger.exception("chat agent failed")
+        raise HTTPException(status_code=503, detail="Agent unavailable") from exc
