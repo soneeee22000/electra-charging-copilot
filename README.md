@@ -62,7 +62,7 @@ The keyless endpoints call the same core modules as the agent's tools, so the ro
 | Grounded agent      | LangGraph `create_react_agent` bound to four tools and Claude (`claude-sonnet-4-6` by default, configurable). Answers are required to come from tool output by the prompt; this is not checked automatically. | `app/agent.py`     |
 | Route planner       | Greedy: at each step, drive to the reachable CCS charger furthest along the corridor, charge to 80%, repeat until the destination is reachable above the buffer. Prices each stop.           | `app/routing.py`   |
 | Station search      | Filters the catalog by city, minimum power, connector, amenity and operator, most powerful first.                                                                                            | `app/search.py`    |
-| Availability (mock) | A deterministic status per station, derived from a hash of its id, so tests and demos are reproducible.                                                                                      | `app/live.py`      |
+| Availability (mock) | A deterministic status per station, derived from the sum of its id's character codes, so runs are reproducible.                                                                               | `app/live.py`      |
 | Retrieval           | Chroma's default embedding function over 16 station documents and 6 policy passages, top 4 by default.                                                                                       | `app/knowledge.py` |
 | Web client          | A single-page client for `/route`, served same-origin by `scripts/demo_server.py`.                                                                                                           | `ui.html`          |
 
@@ -80,7 +80,7 @@ Total: 599.2 km, 3 stops, ~54 min of charging, ~35.03 EUR. Paris to Dijon at 90%
 
 **Read this carefully.** These are outputs of a simple model over invented fixtures, not measured trips. Distances are great-circle distance times 1.2, not road routing, and charge times assume a flat 60% of peak power capped at 150 kW for every car. Stop 3 exists because the planner always charges to 80%: with the target set to 100%, the same trip plans two stops. That is a known limitation, listed below.
 
-**Tests.** 17 pytest tests, all passing locally on Python 3.11.15 and 3.12.13 (2026-09-24), and run in CI on 3.11 and 3.12 on every push. None needs an API key.
+**Tests.** 17 pytest tests, all passing locally on Python 3.11.15 and 3.12.13 (2026-09-24). A CI workflow for 3.11 and 3.12 is included but has not yet run on GitHub. None needs an API key.
 
 | File                          | Tests | Covers                                                                                          |
 | ----------------------------- | ----- | ----------------------------------------------------------------------------------------------- |
@@ -164,7 +164,7 @@ ui.html          web client for /route
 ## Limitations
 
 - **Fixture data only.** 16 stations, 8 routable cities and 4 EV models plus a default profile, all hand-written. Tariffs and the policy passages are illustrative, not sourced. Two fixtures carry a wrong `city` field (the Orléans and Mâcon stations are filed under Paris and Lyon), which affects city search.
-- **Availability is a mock.** It is a hash of the station id, not a feed. The same station always shows the same status.
+- **Availability is a mock.** It is computed from the station id's character codes, not a feed. The same station always shows the same status.
 - **Grounding is enforced by the prompt, not verified.** There is no evaluation of `/chat`: no faithfulness or tool-use checks, no recorded model runs. The claim that answers come only from tools is a design intent that has not been measured.
 - **Planner simplifications.** Straight-line distance times 1.2 instead of road routing; one assumed charging power for every car; a fixed 80% charge target, which can add stops (see Results); greedy choice by distance along the route, not by cost or total time; detour is only a 40 km filter, not a cost.
 - **Retrieval is small and lightly tested.** 22 documents in an in-memory store rebuilt per process; the single retrieval test checks that a roaming-related passage comes back, not ranking quality.

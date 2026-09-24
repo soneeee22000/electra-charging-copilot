@@ -1,10 +1,11 @@
 """EV-optimized route planning.
 
-A deterministic, explainable greedy planner: it minimizes the number of stops
-while never letting state-of-charge fall below a safety buffer, accounting for
-the car's battery and consumption, station power and a charging-curve derate,
-tariffs, and detour cost. This is the "ground truth" engine the LLM calls — it
-never asks the model to do arithmetic about energy.
+A deterministic, explainable greedy planner: at each step it drives to the
+reachable CCS charger furthest along the route and charges to a fixed target,
+never planning to arrive below a safety buffer. It uses the car's battery and
+consumption, station power with a charging-curve derate, and each station's
+tariff to price the stop; detour is only a filter on candidate stations. This
+is the engine the LLM calls, so the model never does arithmetic about energy.
 """
 
 from __future__ import annotations
