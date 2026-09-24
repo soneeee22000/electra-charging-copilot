@@ -7,3 +7,9 @@ venv/
 *.egg-info/
 .chroma/
 .DS_Store
+
+# AI tool working directories
+.claude/
+.sixth/
+.cursor/
+CLAUDE.md
