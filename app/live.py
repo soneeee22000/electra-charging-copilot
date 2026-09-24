@@ -1,8 +1,8 @@
 """Deterministic mock of a live OCPI status feed.
 
-In production this is the Network squad's real-time supervision data (OCPP
-heartbeats / EVSE status rolled up over NATS). Here it is a pure function of
-station_id so the demo and tests are reproducible without a backend.
+A real deployment would read an operator's real-time supervision data (for
+example OCPP heartbeats and EVSE status aggregated by a message bus). Here it is
+a pure function of station_id so the demo and tests are reproducible without a backend.
 """
 
 from __future__ import annotations

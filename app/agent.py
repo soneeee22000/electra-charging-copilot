@@ -3,9 +3,8 @@
 A ReAct-style agent (LangGraph prebuilt) bound to the charging tools and a Claude
 model. The system prompt enforces the core discipline: the model converses and
 explains, but every factual claim about stations, availability, routing or pricing
-MUST come from a tool call — no invented charger data. This is the engineering
-point that matters for an interview: RAG/tools provide ground truth, the LLM is
-the interface, not the source of facts.
+MUST come from a tool call — no invented charger data. The design rationale:
+RAG/tools provide ground truth, the LLM is the interface, not the source of facts.
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """Runtime configuration, loaded from environment / .env.
 
-The model id is configurable; it defaults to a current Claude model. Per the
-team's "pragmatic, not dogmatic" infra style, nothing here is hard-wired.
+The model id is configurable; it defaults to a current Claude model. Every
+setting can be overridden from the environment so deployments need no code change.
 """
 
 from __future__ import annotations
