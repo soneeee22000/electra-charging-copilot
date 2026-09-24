@@ -23,9 +23,22 @@ CAR_MAX_ACCEPT_KW = 150.0  # assumed peak DC acceptance for the demo fleet
 CURVE_DERATE = 0.60  # session-average power as a fraction of peak
 
 
-def _ev_spec(car_model: str) -> tuple[float, float]:
-    """Return (usable_kwh, consumption_kwh_per_100km) for a model, with fallback."""
-    return EV_MODELS.get(car_model, EV_MODELS["default"])
+DEFAULT_CAR_MODEL = "default"
+MIN_BATTERY_PCT = 0
+MAX_BATTERY_PCT = 100
+
+
+def _resolve_car_model(car_model: str) -> str:
+    """Return the catalog profile name actually used for a requested model."""
+    return car_model if car_model in EV_MODELS else DEFAULT_CAR_MODEL
+
+
+def _infeasible(origin: str, destination: str, car_model: str, km: float, reason: str) -> RoutePlan:
+    """Build an infeasible RoutePlan carrying a human-readable reason."""
+    return RoutePlan(
+        origin=origin, destination=destination, car_model=car_model,
+        total_distance_km=km, feasible=False, reason=reason,
+    )
 
 
 def _candidates(origin: tuple[float, float], dest: tuple[float, float]) -> List[Station]:
@@ -65,41 +78,45 @@ def plan_route(origin: str, destination: str, current_battery_pct: int, car_mode
     """Plan an EV route, inserting fast-charge stops only when needed.
 
     Returns a RoutePlan; `feasible=False` with a `reason` if the trip can't be
-    completed with the known network (e.g. an unbridgeable gap).
+    completed with the known network (e.g. an unbridgeable gap) or the starting
+    charge is outside 0-100%. An unknown car model is planned with, and reported
+    as, the default profile.
     """
+    car_model = _resolve_car_model(car_model)
     if origin not in CITIES or destination not in CITIES:
         unknown = origin if origin not in CITIES else destination
-        return RoutePlan(
-            origin=origin, destination=destination, car_model=car_model,
-            total_distance_km=0.0, feasible=False,
-            reason=f"Unknown city '{unknown}'. Known: {', '.join(sorted(CITIES))}.",
+        known = ", ".join(sorted(CITIES))
+        return _infeasible(origin, destination, car_model, 0.0, f"Unknown city '{unknown}'. Known: {known}.")
+    if not MIN_BATTERY_PCT <= current_battery_pct <= MAX_BATTERY_PCT:
+        return _infeasible(
+            origin, destination, car_model, 0.0,
+            f"Starting battery must be between {MIN_BATTERY_PCT} and {MAX_BATTERY_PCT}%.",
         )
 
     o, d = CITIES[origin], CITIES[destination]
-    battery_kwh, cons = _ev_spec(car_model)
+    battery_kwh, cons = EV_MODELS[car_model]
     buffer_kwh = battery_kwh * DEFAULT_USABLE_RANGE_BUFFER_PCT / 100
     total_km = round(haversine_km(*o, *d) * ROAD_FACTOR, 1)
 
     soc_kwh = battery_kwh * current_battery_pct / 100
-    pos, driven, stops, used = o, 0.0, [], set()
+    pos, stops, used = o, [], set()
 
     while True:
         range_km = max(0.0, (soc_kwh - buffer_kwh) / cons * 100)
-        if range_km >= total_km - driven:
-            break  # can reach the destination above the buffer
+        if range_km >= haversine_km(*pos, *d) * ROAD_FACTOR:
+            break  # can reach the destination from here above the buffer
         leg = _next_stop(pos, d, range_km, used)
         if leg is None:
-            return RoutePlan(
-                origin=origin, destination=destination, car_model=car_model,
-                total_distance_km=total_km, feasible=False,
-                reason="No reachable fast charger before the battery hits the safety buffer.",
+            return _infeasible(
+                origin, destination, car_model, total_km,
+                "No reachable fast charger before the battery hits the safety buffer.",
             )
         station, leg_km = leg
         soc_kwh -= leg_km * cons / 100
         stop = _make_stop(station, soc_kwh, battery_kwh, cons)
         stops.append(stop)
         soc_kwh = max(soc_kwh, battery_kwh * stop.depart_battery_pct / 100)
-        pos, driven, used = (station.lat, station.lon), driven + leg_km, used | {station.station_id}
+        pos, used = (station.lat, station.lon), used | {station.station_id}
 
     return RoutePlan(
         origin=origin, destination=destination, car_model=car_model,
