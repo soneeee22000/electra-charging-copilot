@@ -80,7 +80,7 @@ Total: 599.2 km, 3 stops, ~54 min of charging, ~35.03 EUR. The 599.2 km is the d
 
 **Read this carefully.** These are outputs of a simple model over invented fixtures, not measured trips. Distances are great-circle distance times 1.2, not road routing, and charge times assume a flat 60% of peak power capped at 150 kW for every car. Stop 3 exists because the planner always charges to 80%: with the target set to 100%, the same trip plans two stops. That is a known limitation, listed below.
 
-**Tests.** 30 pytest tests, all passing locally on Python 3.11.15 and 3.12.13 (2026-09-24). A CI workflow for 3.11 and 3.12 is included but has not yet run on GitHub. None needs an API key.
+**Tests.** 30 pytest tests, all passing locally on Python 3.11.15 and 3.12.13 (2026-09-24). CI runs them on 3.11 and 3.12 on every push. None needs an API key.
 
 | File                          | Tests | Covers                                                                                          |
 | ----------------------------- | ----- | ----------------------------------------------------------------------------------------------- |
