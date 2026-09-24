@@ -28,7 +28,12 @@ def find_charging_stations(
     """Find charging stations by city, minimum power (kW), connector (CCS/Type2/CHAdeMO)
     or amenity (e.g. café, restaurant, shopping, toilets, supermarket). Use this to
     answer "where can I charge" questions. Returns station id, name, power, tariff and amenities."""
-    conn = Connector(connector) if connector in {c.value for c in Connector} else None
+    conn = None
+    if connector:
+        conn = _parse_connector(connector)
+        if conn is None:
+            known = ", ".join(c.value for c in Connector)
+            return f"Unknown connector '{connector}'. Known connectors: {known}."
     stations = find_charging_stations_raw(city, min_power_kw, conn, amenity)
     if not stations:
         return "No matching stations found in the catalog."
@@ -39,6 +44,12 @@ def find_charging_stations(
         for s in stations
     ]
     return "\n".join(lines)
+
+
+def _parse_connector(name: str) -> Optional[Connector]:
+    """Match a connector name case-insensitively; None when it is not a known standard."""
+    by_name = {c.value.lower(): c for c in Connector}
+    return by_name.get(name.strip().lower())
 
 
 def find_charging_stations_raw(city, min_power_kw, connector, amenity):  # type: ignore[no-untyped-def]
@@ -75,8 +86,11 @@ def plan_charging_route(
     plan = plan_route(origin, destination, current_battery_pct, car_model)
     if not plan.feasible:
         return f"Route not feasible: {plan.reason}"
+    note = ""
+    if plan.car_model != car_model:
+        note = f"Note: car model '{car_model}' is not in the catalog; planned with the default profile.\n"
     if not plan.stops:
-        return f"{origin} to {destination} ({plan.total_distance_km} km): no charging stop needed."
+        return f"{note}{origin} to {destination} ({plan.total_distance_km} km): no charging stop needed."
     rows = [
         f"  {i+1}. {s.name} ({s.city}): arrive {s.arrive_battery_pct}% -> {s.depart_battery_pct}%, "
         f"+{s.added_kwh} kWh, ~{s.est_charge_minutes} min, ~{s.est_cost_eur:.2f} EUR"
@@ -84,7 +98,7 @@ def plan_charging_route(
     ]
     header = f"{origin} to {destination} ({plan.total_distance_km} km), {len(plan.stops)} stop(s):"
     totals = f"Totals: ~{plan.total_charge_minutes} min charging, ~{plan.total_cost_eur:.2f} EUR."
-    return "\n".join([header, *rows, totals])
+    return note + "\n".join([header, *rows, totals])
 
 
 @tool
